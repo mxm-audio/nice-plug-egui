@@ -26,6 +26,7 @@ pub use baseview::gl::{GlConfig, Profile};
 pub use crate::editor::{EguiEditor, EguiEditorHandle, EguiNiceSettings};
 
 mod editor;
+pub mod host_keys;
 pub mod resizable_window;
 pub mod widgets;
 

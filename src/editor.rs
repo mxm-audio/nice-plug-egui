@@ -35,6 +35,12 @@ pub struct EguiNiceSettings {
     /// fixed-size behavior. To make an editor resizable, return a hint with
     /// `can_resize: true`; the per-axis flags and aspect-ratio fields refine how.
     pub resize_hint: ResizeHint,
+
+    /// MXM PATCH (*Host keys*): which keys the editor uses: those it takes when a host offers them
+    /// rather than letting its window have them ([`crate::host_keys`]), and the only ones its window
+    /// keeps when it has them, the rest going to the host (egui-baseview's `KeyCapture::Ask`).
+    /// `None` takes none from a host, and keeps upstream's answer in the window.
+    pub host_keys: Option<crate::host_keys::WantsKey>,
 }
 
 impl EguiNiceSettings {
@@ -68,6 +74,18 @@ impl EguiNiceSettings {
         self.resize_hint = resize_hint;
         self
     }
+
+    /// MXM PATCH (*Host keys*): take the keys `wants` names when a host offers them instead of
+    /// letting the window have them (Ableton Live 11's letters and Shift with the arrows), as the
+    /// window's own keys.
+    #[inline]
+    pub fn with_host_keys(
+        mut self,
+        wants: impl Fn(&egui::Context, egui::Key, egui::Modifiers) -> bool + Send + Sync + 'static,
+    ) -> Self {
+        self.host_keys = Some(Arc::new(wants));
+        self
+    }
 }
 
 struct UserAppWrapper<A: NiceEguiApp> {
@@ -75,6 +93,10 @@ struct UserAppWrapper<A: NiceEguiApp> {
     gui_context: GuiContext,
     egui_ctx: Arc<Mutex<Option<egui::Context>>>,
     egui_state: Arc<EguiEditorState>,
+    /// MXM PATCH (*Host keys*): the keys taken from the host, given to egui each frame.
+    host_keys: Arc<Mutex<crate::host_keys::Taken>>,
+    /// MXM PATCH (*Host keys*): which keys the editor uses, asked in the window too.
+    wants_key: Option<crate::host_keys::WantsKey>,
 }
 
 impl<A: NiceEguiApp> egui_baseview::App for UserAppWrapper<A> {
@@ -84,6 +106,11 @@ impl<A: NiceEguiApp> egui_baseview::App for UserAppWrapper<A> {
         frame: &mut egui_baseview::Frame,
     ) -> Result<(), baseview::HandlerError> {
         *self.egui_ctx.lock() = Some(egui_ctx.clone());
+        if let Some(wants) = &self.wants_key {
+            frame.set_key_capture(egui_baseview::KeyCapture::Ask(egui_baseview::KeyClaim(
+                wants.clone(),
+            )));
+        }
 
         self.user_app
             .lock()
@@ -91,6 +118,7 @@ impl<A: NiceEguiApp> egui_baseview::App for UserAppWrapper<A> {
     }
 
     fn ui(&mut self, ui: &mut egui::Ui, frame: &mut egui_baseview::Frame) {
+        crate::host_keys::give(ui.ctx(), &self.host_keys);
         self.user_app.lock().ui(ui, frame);
     }
 
@@ -209,6 +237,21 @@ impl<A: NiceEguiApp> Editor for EguiEditor<A> {
             })
         };
 
+        let host_keys = Arc::new(Mutex::new(crate::host_keys::Taken::default()));
+        // Registered for as long as the handle lives, so only while this window is open.
+        let host_key_registration = match (&self.settings.host_keys, &parent) {
+            (Some(wants), Some(parent)) => Some(nice_plug::host_keys::register(
+                parent,
+                crate::host_keys::receiver(
+                    wants.clone(),
+                    egui_ctx.clone(),
+                    host_keys.clone(),
+                    self.repaint_notifier.clone(),
+                ),
+            )),
+            _ => None,
+        };
+
         let window = EguiWindow::create_with_host(
             settings,
             UserAppWrapper {
@@ -216,6 +259,8 @@ impl<A: NiceEguiApp> Editor for EguiEditor<A> {
                 gui_context,
                 egui_ctx,
                 egui_state: egui_state.clone(),
+                host_keys,
+                wants_key: self.settings.host_keys.clone(),
             },
             host,
         )?;
@@ -227,6 +272,7 @@ impl<A: NiceEguiApp> Editor for EguiEditor<A> {
                 egui_state: self.egui_state.clone(),
                 resize_hint: self.settings.resize_hint,
                 repaint_notifier: self.repaint_notifier.clone(),
+                _host_keys: host_key_registration,
             },
             window,
         })
@@ -262,6 +308,8 @@ pub struct EguiEditorHandle {
     egui_state: Arc<EguiEditorState>,
     repaint_notifier: RepaintNotifier,
     resize_hint: ResizeHint,
+    /// MXM PATCH (*Host keys*): the window's receiver, registered until the handle goes.
+    _host_keys: Option<nice_plug::host_keys::Registration>,
 }
 
 impl EditorHandle for EguiEditorHandle {

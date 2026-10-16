@@ -62,6 +62,12 @@ default-features = false
 [dependencies.nice-plug-core]
 version = "0.4.2"
 
+# MXM PATCH (*Host keys*): nice-plug's `host_keys` registry, which the VST3 wrapper offers a host's
+# keys through. Only the MXM fork of nice-plug has it.
+[dependencies.nice-plug]
+version = "0.4.2"
+default-features = false
+
 [dependencies.parking_lot]
 version = "0.12"
 
@@ -71,3 +77,10 @@ version = "0.6"
 [dependencies.serde]
 version = "1.0"
 features = ["derive"]
+
+# MXM PATCH (*Host keys*): the registry is the nice-plug fork's and `KeyCapture::Ask` the
+# egui-baseview fork's, which every repository that builds an MXM plugin patches in too; this is for
+# building this crate alone.
+[patch.crates-io]
+nice-plug = { git = "https://github.com/mxm-audio/nice-plug", branch = "main" }
+egui-baseview = { git = "https://github.com/mxm-audio/egui-baseview", branch = "main" }
