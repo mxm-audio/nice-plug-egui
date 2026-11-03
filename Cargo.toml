@@ -63,10 +63,11 @@ default-features = false
 version = "0.4.2"
 
 # MXM PATCH (*Host keys*): nice-plug's `host_keys` registry, which the VST3 wrapper offers a host's
-# keys through. Only the MXM fork of nice-plug has it.
+# keys through. Only the MXM fork of nice-plug has it, behind its `editor` feature.
 [dependencies.nice-plug]
 version = "0.4.2"
 default-features = false
+features = ["editor"]
 
 [dependencies.parking_lot]
 version = "0.12"

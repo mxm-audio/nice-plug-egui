@@ -27,7 +27,8 @@ answer with `mxm_ui::navigation::takes_key` (mxm-kit's `mxm-editor`). Two paths 
   come back).
 
 `None`, the default, keeps upstream's behaviour on both paths. The crate depends on the nice-plug
-fork for the registry (`[dependencies.nice-plug]`, `default-features = false`), and its own
+fork for the registry (`[dependencies.nice-plug]`, `default-features = false` with its `editor`
+feature, which the registry is behind since 2026-11-03), and its own
 `[patch.crates-io]` takes the nice-plug and egui-baseview forks, for building this crate alone; every
 repository that builds an MXM plugin patches them in anyway.
 
