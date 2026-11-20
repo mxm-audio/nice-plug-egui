@@ -571,7 +571,7 @@ dependencies = [
 [[package]]
 name = "egui-baseview"
 version = "0.7.2"
-source = "git+https://github.com/mxm-audio/egui-baseview?branch=main#362c13629e0145370b412198e5f8e8b4daca3835"
+source = "git+https://github.com/mxm-audio/egui-baseview?branch=main#7182312e969a64b31d562463f15ce8262cf10d07"
 dependencies = [
  "baseview",
  "copypasta",
@@ -743,6 +743,12 @@ name = "foreign-types-shared"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
+
+[[package]]
+name = "fragile"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8878864ba14bb86e818a412bfd6f18f9eabd4ec0f008a28e8f7eb61db532fcf9"
 
 [[package]]
 name = "futures-core"
@@ -1269,6 +1275,7 @@ dependencies = [
  "clap-sys",
  "core-foundation 0.10.1",
  "crossbeam",
+ "fragile",
  "libc",
  "nice-log",
  "nice-plug-core",
